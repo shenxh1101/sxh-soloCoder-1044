@@ -42,24 +42,29 @@ export function createInitCommand(): Command {
         if (!(await fs.pathExists(readmePath))) {
           await fs.writeFile(
             readmePath,
-            `# ${config.name}\n\n## 快速开始\n\n\`\`\`bash\n# 新增路由\nmock route add GET /users\n\n# 新增响应场景\nmock case add /users success --body '{"code":0,"data":[]}'\n\n# 启动服务\nmock serve\n\`\`\`\n`
+            `# ${config.name}\n\n## 快速开始\n\n\`\`\`bash\n# 新增路由（路径相对于 baseUrl: ${config.baseUrl}）\nmock route add GET /users\n# 完整访问路径: ${config.baseUrl}/users\n\n# 新增响应场景\nmock case add GET /users success --body '{\"code\":0,\"data\":[]}'\n\n# 启动服务\nmock serve\n\`\`\`\n`
           );
         }
 
         const exampleRouteDir = path.join(routesDir, '.examples');
         await fs.mkdirp(exampleRouteDir);
-        await createExampleRoutes(exampleRouteDir);
+        await createExampleRoutes(exampleRouteDir, config.baseUrl);
 
         logger.success(`项目初始化成功!`);
         logger.raw('');
-        logger.raw(chalk.cyan('项目结构:'));
-        logger.raw(`  ${chalk.gray('-')} ${configPath}`);
-        logger.raw(`  ${chalk.gray('-')} ${routesDir}/`);
-        logger.raw(`  ${chalk.gray('-')} ${routesDir}/.examples/`);
+        logger.raw(chalk.cyan('项目配置:'));
+        logger.raw(`  ${chalk.gray('名称:')} ${config.name} v${config.version}`);
+        logger.raw(`  ${chalk.gray('端口:')} ${config.port}`);
+        logger.raw(`  ${chalk.gray('Base URL:')} ${chalk.yellow(config.baseUrl)}`);
+        logger.raw(`  ${chalk.gray('路由目录:')} ${routesDir}/`);
+        logger.raw('');
+        logger.raw(chalk.cyan('💡 路径说明:'));
+        logger.raw(`  添加路由时请使用相对路径（如 ${chalk.yellow('/users')}），完整访问路径 = baseUrl + 路径`);
+        logger.raw(`  例如: mock route add GET ${chalk.yellow('/users')} → 访问 ${chalk.cyan(`http://localhost:${config.port}${config.baseUrl}/users`)}`);
         logger.raw('');
         logger.raw(chalk.cyan('下一步:'));
-        logger.raw(`  ${chalk.gray('1.')} mock route list                    查看示例路由`);
-        logger.raw(`  ${chalk.gray('2.')} mock route add GET /api/test         新增路由`);
+        logger.raw(`  ${chalk.gray('1.')} mock route list                    查看示例路由（含完整路径）`);
+        logger.raw(`  ${chalk.gray('2.')} mock route add GET /test           新增路由（相对路径）`);
         logger.raw(`  ${chalk.gray('3.')} mock serve                           启动服务`);
         logger.raw('');
       } catch (error) {
@@ -71,7 +76,7 @@ export function createInitCommand(): Command {
   return command;
 }
 
-async function createExampleRoutes(dir: string): Promise<void> {
+async function createExampleRoutes(dir: string, baseUrl: string): Promise<void> {
   const examples = [
     {
       method: 'GET',

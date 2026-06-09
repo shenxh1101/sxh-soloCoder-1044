@@ -258,7 +258,7 @@ function generateMarkdownDoc(routes: Route[], options: {
 }
 
 function generateExample(route: Route, caseItem: ResponseCase, language: string, baseUrl: string): string {
-  const fullUrl = baseUrl + route.path;
+  const fullUrl = (baseUrl + route.path).replace(/\/+/g, '/');
   const body = typeof caseItem.body === 'string' ? caseItem.body : JSON.stringify(caseItem.body, null, 2);
 
   switch (language.toLowerCase()) {

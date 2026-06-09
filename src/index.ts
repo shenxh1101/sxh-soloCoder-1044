@@ -7,6 +7,8 @@ import { createRouteCommand } from './commands/route';
 import { createCaseCommand } from './commands/case';
 import { createServeCommand } from './commands/serve';
 import { createExportCommand } from './commands/export';
+import { createDebugCommand } from './commands/debug';
+import { createRecordCommand } from './commands/record';
 
 const pkg = require('../package.json');
 
@@ -23,6 +25,8 @@ program.addCommand(createRouteCommand());
 program.addCommand(createCaseCommand());
 program.addCommand(createServeCommand());
 program.addCommand(createExportCommand());
+program.addCommand(createDebugCommand());
+program.addCommand(createRecordCommand());
 
 program.addHelpText('after', `
 
@@ -35,16 +39,19 @@ ${chalk.cyan('快速开始:')}
 ${chalk.cyan('常用命令:')}
   ${chalk.green('mock route list')}           查看所有路由
   ${chalk.green('mock route show')}            查看路由详情
-  ${chalk.green('mock route validate')}        校验所有配置
-  ${chalk.green('mock case list')}             查看场景列表
   ${chalk.green('mock route use')}             切换当前场景
+  ${chalk.green('mock case list')}             查看场景列表
+  ${chalk.green('mock case default')}          设置默认场景
+  ${chalk.green('mock debug')}                 场景调试面板
+  ${chalk.green('mock record list')}           查看录制记录
   ${chalk.green('mock export doc')}            导出接口文档
   ${chalk.green('mock export example')}        生成调用示例
 
 ${chalk.cyan('高级用法:')}
   ${chalk.gray('-')} 支持按 query/body/header 参数匹配不同响应
   ${chalk.gray('-')} 启动服务时可临时覆盖状态码、延迟、响应体
-  ${chalk.gray('-')} 支持热重载，修改配置自动生效
+  ${chalk.gray('-')} 支持热重载，修改配置自动生效 (mock serve -w)
+  ${chalk.gray('-')} 支持请求录制，一键转成新场景 (mock serve -r)
   ${chalk.gray('-')} 导出 OpenAPI、Postman、Markdown 多种格式
 `);
 

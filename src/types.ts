@@ -66,10 +66,32 @@ export interface ServeOptions {
   port?: number;
   host?: string;
   watch?: boolean;
+  record?: boolean;
+  recordDir?: string;
   override?: {
     statusCode?: number;
     delay?: number;
     body?: any;
     case?: string;
   };
+}
+
+export interface RecordedRequest {
+  id: string;
+  timestamp: string;
+  method: HttpMethod;
+  path: string;
+  fullUrl: string;
+  query: Record<string, any>;
+  body: any;
+  headers: Record<string, string>;
+  response: {
+    statusCode: number;
+    delay: number;
+    headers: Record<string, string>;
+    body: any;
+    caseName: string;
+    selectionReason: string;
+  };
+  duration: number;
 }

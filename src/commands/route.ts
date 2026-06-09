@@ -83,7 +83,14 @@ function createAddCommand(): Command {
       };
 
       await configManager.saveRoute(route);
+
+      const config = configManager.getConfig();
+      const fullPath = (config.baseUrl + path).replace(/\/+/g, '/');
+      const fullUrl = `http://localhost:${config.port}${fullPath}`;
+
       logger.success(`已添加路由: ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
+      logger.raw(`  ${chalk.gray('完整路径:')} ${chalk.cyan(fullPath)}`);
+      logger.raw(`  ${chalk.gray('访问地址:')} ${chalk.cyan(fullUrl)}`);
     });
 }
 
@@ -95,6 +102,7 @@ function createListCommand(): Command {
     .action(async (options) => {
       const configManager = new ConfigManager();
       await configManager.ensureProject();
+      const config = configManager.getConfig();
 
       const routes = await configManager.loadAllRoutes();
 
@@ -112,20 +120,25 @@ function createListCommand(): Command {
         filtered = filtered.filter(r => r.method === options.method.toUpperCase());
       }
 
-      const data = filtered.map(route => [
-        chalk.green(route.method),
-        chalk.cyan(route.path),
-        route.description || '-',
-        route.cases.length.toString(),
-        route.activeCase ? chalk.yellow(route.activeCase) : '-',
-        route.tags ? route.tags.join(', ') : '-',
-      ]);
+      const data = filtered.map(route => {
+        const fullPath = (config.baseUrl + route.path).replace(/\/+/g, '/');
+        return [
+          chalk.green(route.method),
+          chalk.cyan(route.path),
+          chalk.gray(fullPath),
+          route.description || '-',
+          route.cases.length.toString(),
+          route.activeCase ? chalk.yellow(route.activeCase) : '-',
+          route.tags ? route.tags.join(', ') : '-',
+        ];
+      });
 
       logger.table(
         data,
-        ['方法', '路径', '描述', '场景数', '当前场景', '标签']
+        ['方法', '路径', '完整路径', '描述', '场景数', '当前场景', '标签']
       );
       logger.raw(`\n共 ${chalk.bold(filtered.length)} 个路由`);
+      logger.raw(`${chalk.gray(`Base URL: ${config.baseUrl}`)}`);
     });
 }
 
@@ -183,7 +196,13 @@ function createShowCommand(): Command {
         process.exit(1);
       }
 
+      const config = configManager.getConfig();
+      const fullPath = (config.baseUrl + route.path).replace(/\/+/g, '/');
+      const fullUrl = `http://localhost:${config.port}${fullPath}`;
+
       logger.raw(chalk.cyan(`\n=== ${route.method} ${route.path} ===`));
+      logger.raw(chalk.gray(`完整路径: ${fullPath}`));
+      logger.raw(chalk.gray(`访问地址: ${fullUrl}`));
       if (route.description) {
         logger.raw(chalk.gray(`描述: ${route.description}`));
       }
@@ -194,6 +213,10 @@ function createShowCommand(): Command {
       logger.raw(chalk.gray(`更新时间: ${route.updatedAt}`));
       if (route.activeCase) {
         logger.raw(chalk.yellow(`当前场景: ${route.activeCase}`));
+      }
+      const defaultCase = route.cases.find(c => c.default);
+      if (defaultCase) {
+        logger.raw(chalk.blue(`默认场景: ${defaultCase.name}`));
       }
       logger.raw('');
 
@@ -270,9 +293,10 @@ function createValidateCommand(): Command {
 
 function createUseCommand(): Command {
   return new Command('use')
-    .description('设置路由当前使用的响应场景')
+    .description('设置路由当前使用的响应场景（无参数匹配时优先使用）')
     .arguments('<method> <path> <caseName>')
-    .action(async (method: string, path: string, caseName: string) => {
+    .option('--also-default', '同时设为默认场景', false)
+    .action(async (method: string, path: string, caseName: string, options) => {
       const configManager = new ConfigManager();
       await configManager.ensureProject();
 
@@ -284,17 +308,41 @@ function createUseCommand(): Command {
         process.exit(1);
       }
 
-      const caseExists = route.cases.some(c => c.name === caseName);
-      if (!caseExists) {
+      const caseItem = route.cases.find(c => c.name === caseName);
+      if (!caseItem) {
         logger.error(`场景不存在: ${caseName}`);
         logger.info(`可用场景: ${route.cases.map(c => c.name).join(', ')}`);
         process.exit(1);
       }
 
+      const oldActive = route.activeCase;
       route.activeCase = caseName;
+
+      if (options.alsoDefault) {
+        route.cases.forEach(c => { c.default = false; });
+        caseItem.default = true;
+      }
+
       route.updatedAt = new Date().toISOString();
       await configManager.saveRoute(route);
 
-      logger.success(`已设置 ${chalk.green(upperMethod)} ${chalk.cyan(path)} 使用场景: ${chalk.yellow(caseName)}`);
+      logger.raw('');
+      logger.success(`已设置当前场景: ${chalk.yellow(caseName)}`);
+      logger.raw(`  ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
+
+      if (oldActive !== caseName) {
+        logger.info(`之前的当前场景: ${oldActive ? chalk.yellow(oldActive) : chalk.gray('(无)')}`);
+      }
+
+      if (options.alsoDefault) {
+        logger.success(`已同步设置为默认场景: ${chalk.yellow(caseName)}`);
+      }
+
+      logger.raw('');
+      logger.raw(chalk.cyan('💡 场景说明:'));
+      logger.raw(`  ${chalk.yellow('[当前场景]')} 无参数匹配时优先使用，优先级高于默认场景`);
+      logger.raw(`  ${chalk.blue('[默认场景]')} 无参数匹配且无当前场景时使用`);
+      logger.raw(`  ${chalk.green('[条件匹配]')} 按参数匹配，优先级最高`);
+      logger.raw('');
     });
 }

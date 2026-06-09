@@ -1,0 +1,11 @@
+{
+  "name": "mock-api-project",
+  "version": "1.0.0",
+  "port": 3000,
+  "baseUrl": "/api",
+  "routesDir": "routes",
+  "defaultDelay": 0,
+  "defaultStatusCode": 200,
+  "cors": true,
+  "requestLogger": true
+}

@@ -1,0 +1,27 @@
+path: /users
+method: GET
+description: 获取用户列表
+createdAt: '2026-06-09T00:09:50.331Z'
+updatedAt: '2026-06-09T00:09:50.331Z'
+cases:
+  - name: success
+    description: 成功返回用户列表
+    statusCode: 200
+    default: true
+    body:
+      code: 0
+      message: success
+      data:
+        - id: 1
+          name: 张三
+          age: 25
+        - id: 2
+          name: 李四
+          age: 30
+  - name: empty
+    description: 空列表
+    statusCode: 200
+    body:
+      code: 0
+      message: success
+      data: []

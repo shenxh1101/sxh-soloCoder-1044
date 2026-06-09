@@ -1,0 +1,29 @@
+path: /users/:id
+method: GET
+description: 获取用户详情
+createdAt: '2026-06-09T00:09:50.333Z'
+updatedAt: '2026-06-09T00:09:50.333Z'
+cases:
+  - name: success
+    description: 成功返回用户信息
+    statusCode: 200
+    default: true
+    body:
+      code: 0
+      message: success
+      data:
+        id: 1
+        name: 张三
+        age: 25
+        email: zhangsan@example.com
+    conditions:
+      query:
+        - name: id
+          value: '1'
+  - name: not_found
+    description: 用户不存在
+    statusCode: 404
+    body:
+      code: 404
+      message: 用户不存在
+      data: null

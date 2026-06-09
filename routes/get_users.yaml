@@ -1,0 +1,13 @@
+path: /users
+method: GET
+description: 用户列表
+createdAt: '2026-06-09T00:15:09.819Z'
+updatedAt: '2026-06-09T00:15:09.819Z'
+cases:
+  - name: default
+    description: 默认响应
+    statusCode: 200
+    delay: 0
+    body: {}
+    default: true
+activeCase: default

@@ -102,7 +102,12 @@ function createAddCommand(): Command {
       route.updatedAt = new Date().toISOString();
       await configManager.saveRoute(route);
 
-      logger.success(`已${existingIndex !== -1 ? '更新' : '添加'}场景: ${chalk.yellow(caseName)} for ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
+      const config = configManager.getConfig();
+      const fullPath = (config.baseUrl + path).replace(/\/+/g, '/');
+
+      logger.success(`已${existingIndex !== -1 ? '更新' : '添加'}场景: ${chalk.yellow(caseName)}`);
+      logger.raw(`  ${chalk.gray('接口:')} ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
+      logger.raw(`  ${chalk.gray('完整路径:')} ${chalk.cyan(fullPath)}`);
     });
 }
 
@@ -122,7 +127,11 @@ function createListCommand(): Command {
         process.exit(1);
       }
 
+      const config = configManager.getConfig();
+      const fullPath = (config.baseUrl + route.path).replace(/\/+/g, '/');
+
       logger.raw(chalk.cyan(`\n场景列表: ${route.method} ${route.path}`));
+      logger.raw(chalk.gray(`完整路径: ${fullPath}`));
       logger.raw('');
 
       if (route.cases.length === 0) {
@@ -285,9 +294,10 @@ function createUpdateCommand(): Command {
 
 function createDefaultCommand(): Command {
   return new Command('default')
-    .description('设置接口的默认响应场景')
+    .description('设置接口的默认响应场景，同时会设为当前场景')
     .arguments('<method> <path> <caseName>')
-    .action(async (method: string, path: string, caseName: string) => {
+    .option('--no-activate', '仅设为默认场景，不设为当前场景', false)
+    .action(async (method: string, path: string, caseName: string, options) => {
       const configManager = new ConfigManager();
       await configManager.ensureProject();
 
@@ -308,10 +318,36 @@ function createDefaultCommand(): Command {
 
       route.cases.forEach(c => { c.default = false; });
       caseItem.default = true;
+
+      const oldActive = route.activeCase;
+      if (!options.noActivate) {
+        route.activeCase = caseName;
+      }
       route.updatedAt = new Date().toISOString();
 
       await configManager.saveRoute(route);
+
+      logger.raw('');
       logger.success(`已设置默认场景: ${chalk.yellow(caseName)}`);
+      if (!options.noActivate) {
+        if (oldActive !== caseName) {
+          logger.success(`已同步设置为当前场景: ${chalk.yellow(caseName)}`);
+        } else {
+          logger.info(`当前场景保持为: ${chalk.yellow(caseName)}`);
+        }
+      }
+      logger.raw('');
+      logger.raw(chalk.cyan('💡 场景说明:'));
+      logger.raw(`  ${chalk.blue('[默认场景]')} 没有条件匹配时使用的回退场景`);
+      logger.raw(`  ${chalk.yellow('[当前场景]')} 没有条件匹配时优先使用的场景（优先级高于默认场景）`);
+      logger.raw(`  ${chalk.green('[条件匹配]')} 按 query/body/header 参数匹配，优先级最高`);
+      logger.raw('');
+      logger.raw(chalk.cyan('命中顺序:'));
+      logger.raw(`  1. 参数条件匹配 → 2. 当前场景(activeCase) → 3. 默认场景(default) → 4. 第一个场景`);
+      logger.raw('');
+      if (options.noActivate) {
+        logger.info(`使用 'mock route use ${upperMethod} ${path} ${caseName}' 单独设置当前场景`);
+      }
     });
 }
 

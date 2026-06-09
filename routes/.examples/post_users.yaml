@@ -1,0 +1,29 @@
+path: /users
+method: POST
+description: 创建用户
+createdAt: '2026-06-09T00:09:50.334Z'
+updatedAt: '2026-06-09T00:09:50.334Z'
+cases:
+  - name: success
+    description: 创建成功
+    statusCode: 201
+    delay: 500
+    default: true
+    body:
+      code: 0
+      message: 创建成功
+      data:
+        id: 3
+        name: 王五
+        age: 28
+  - name: validation_error
+    description: 参数校验失败
+    statusCode: 400
+    body:
+      code: 400
+      message: 参数校验失败
+      errors:
+        - field: name
+          message: 姓名不能为空
+        - field: age
+          message: 年龄必须大于0
