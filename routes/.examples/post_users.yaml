@@ -1,8 +1,8 @@
 path: /users
 method: POST
 description: 创建用户
-createdAt: '2026-06-09T00:09:50.334Z'
-updatedAt: '2026-06-09T00:09:50.334Z'
+createdAt: '2026-06-09T00:53:54.503Z'
+updatedAt: '2026-06-09T00:53:54.503Z'
 cases:
   - name: success
     description: 创建成功

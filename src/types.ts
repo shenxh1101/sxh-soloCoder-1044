@@ -102,3 +102,23 @@ export interface RecordedRequest {
   };
   duration: number;
 }
+
+export type OperationType = 'route_add' | 'route_delete' | 'route_use' | 'case_add' | 'case_delete' | 'case_update' | 'case_default' | 'debug' | 'record_list' | 'record_show' | 'record_to_case' | 'serve_start';
+
+export interface SessionOperation {
+  id: string;
+  timestamp: string;
+  type: OperationType;
+  command: string;
+  details: any;
+}
+
+export interface Session {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime?: string;
+  operations: SessionOperation[];
+  recordedRequests: RecordedRequest[];
+  active: boolean;
+}

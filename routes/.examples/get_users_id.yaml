@@ -1,8 +1,8 @@
 path: /users/:id
 method: GET
 description: 获取用户详情
-createdAt: '2026-06-09T00:09:50.333Z'
-updatedAt: '2026-06-09T00:09:50.333Z'
+createdAt: '2026-06-09T00:53:54.503Z'
+updatedAt: '2026-06-09T00:53:54.503Z'
 cases:
   - name: success
     description: 成功返回用户信息

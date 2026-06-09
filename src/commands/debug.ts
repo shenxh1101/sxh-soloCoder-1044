@@ -4,6 +4,7 @@ import { ConfigManager } from '../utils/config';
 import { logger } from '../utils/logger';
 import { selectResponseCase, CaseMatchResult, ConditionCheckResult } from '../utils/condition';
 import { Route } from '../types';
+import { recordOperation } from './session';
 
 export function createDebugCommand(): Command {
   const command = new Command('debug');
@@ -39,8 +40,8 @@ export function createDebugCommand(): Command {
       const body = parseParams(options.body);
       const headers = parseParams(options.header);
 
+      const fullPath = configManager.getFullPath(path);
       const config = configManager.getConfig();
-      const fullPath = (config.baseUrl + path).replace(/\/+/g, '/');
       const fullUrl = `http://localhost:${config.port}${fullPath}`;
 
       logger.raw('');
@@ -146,6 +147,17 @@ export function createDebugCommand(): Command {
       logger.raw(`  ${chalk.gray('4.')} 默认场景 (default: true)`);
       logger.raw(`  ${chalk.gray('5.')} 第一个场景`);
       logger.raw(chalk.cyan('='.repeat(80)));
+
+      recordOperation('debug', process.argv.join(' '), {
+        method: upperMethod,
+        path,
+        fullPath: configManager.getFullPath(path),
+        query,
+        body,
+        headers,
+        selectedCase: result.selectedCase.name,
+        selectionReason: result.selectionReason,
+      });
     });
 
   return command;

@@ -1,46 +1,22 @@
 path: /test
 method: GET
-description: 测试路由
-createdAt: '2026-06-09T00:10:11.060Z'
-updatedAt: '2026-06-09T00:16:31.168Z'
+description: 测试路径规范化
+createdAt: '2026-06-09T00:54:27.154Z'
+updatedAt: '2026-06-09T00:58:31.597Z'
 cases:
   - name: default
     description: 默认响应
     statusCode: 200
     delay: 0
     body: {}
-    default: false
-  - name: success
-    statusCode: 200
-    delay: 0
-    body: '{code:0,message:success}'
-    default: false
-  - name: error
-    statusCode: 500
-    delay: 0
-    body: '{code:500,message:internal error}'
     default: true
-  - name: with_params
+  - name: high_page
     statusCode: 200
     delay: 0
-    body: '{code:0,message:with params}'
+    body: '{page:high,code:0}'
     default: false
     conditions:
       query:
         - name: page
-          value: 1
-        - name: limit
-          value: 10
-  - name: from_record
-    description: 从录制记录 1780964079484-vreow5sm3 转换
-    statusCode: 200
-    delay: 0
-    body: '{code:0,message:with params}'
-    conditions:
-      query:
-        - name: page
-          value: '1'
-        - name: limit
-          value: '10'
-    default: false
-activeCase: error
+          gt: 5
+activeCase: default

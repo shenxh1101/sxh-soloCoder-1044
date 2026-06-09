@@ -4,7 +4,8 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { ConfigManager } from '../utils/config';
 import { logger } from '../utils/logger';
-import { RecordedRequest, ResponseCase } from '../types';
+import { RecordedRequest, ResponseCase, Route } from '../types';
+import { recordOperation } from './session';
 
 export function createRecordCommand(): Command {
   const command = new Command('record');
@@ -20,12 +21,12 @@ export function createRecordCommand(): Command {
   return command;
 }
 
-function getRecordDir(configManager: ConfigManager, customDir?: string): string {
+export function getRecordDir(configManager: ConfigManager, customDir?: string): string {
   const recordDir = customDir || '.records';
   return path.join(process.cwd(), recordDir);
 }
 
-async function loadRecords(recordDir: string, date?: string): Promise<RecordedRequest[]> {
+export async function loadRecords(recordDir: string, date?: string): Promise<RecordedRequest[]> {
   if (date) {
     const filePath = path.join(recordDir, `${date}.json`);
     if (await fs.pathExists(filePath)) {
@@ -50,6 +51,11 @@ async function loadRecords(recordDir: string, date?: string): Promise<RecordedRe
   }
 
   return [];
+}
+
+export async function getRecord(id: string, recordDir: string): Promise<RecordedRequest | null> {
+  const records = await loadRecords(recordDir);
+  return records.find(r => r.id === id) || null;
 }
 
 function getMethodColor(method: string): (text: string) => string {
@@ -257,8 +263,11 @@ function createToCaseCommand(): Command {
         process.exit(1);
       }
 
-      const convertConditions = (obj: Record<string, any> | undefined | null): { name: string; value: string | number | boolean }[] | undefined => {
-        if (!obj || Object.keys(obj).length === 0) return undefined;
+      const hasQuery = record.query && Object.keys(record.query).length > 0;
+      const hasBody = record.body && Object.keys(record.body).length > 0;
+
+      const convertConditions = (obj: Record<string, any> | undefined | null): { name: string; value: string | number | boolean }[] => {
+        if (!obj || Object.keys(obj).length === 0) return [];
         return Object.entries(obj).map(([name, value]) => ({
           name,
           value: typeof value === 'object' ? JSON.stringify(value) : value as string | number | boolean,
@@ -278,6 +287,10 @@ function createToCaseCommand(): Command {
         },
         default: options.default,
       };
+
+      if (!hasQuery && !hasBody) {
+        newCase.description += ' - 仅匹配无 query、无 body 的请求';
+      }
 
       if (options.default) {
         route.cases.forEach(c => { c.default = false; });
@@ -300,6 +313,14 @@ function createToCaseCommand(): Command {
       if (newCase.conditions?.body?.length) {
         logger.raw(`  Body 条件: ${newCase.conditions.body.map(c => `${c.name}=${c.value}`).join(', ')}`);
       }
+
+      recordOperation('record_to_case', process.argv.join(' '), {
+        recordId: record.id,
+        method: record.method,
+        path: record.path,
+        caseName: options.name,
+        conditions: newCase.conditions,
+      });
     });
 }
 

@@ -1,9 +1,11 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
-import * as yaml from 'js-yaml';
+import * as inquirer from 'inquirer';
 import { ConfigManager } from '../utils/config';
 import { logger } from '../utils/logger';
-import { HttpMethod, Route } from '../types';
+import { Route, HttpMethod } from '../types';
+import { recordOperation } from './session';
+import * as yaml from 'js-yaml';
 
 export function createRouteCommand(): Command {
   const command = new Command('route');
@@ -101,6 +103,13 @@ function createAddCommand(): Command {
       logger.raw(`  ${chalk.gray('访问地址:')} ${chalk.cyan(fullUrl)}`);
       logger.raw(`  ${chalk.gray('Base URL:')} ${baseUrl}`);
       logger.raw(`  ${chalk.gray('说明:')} 路由路径已自动去除 baseUrl 前缀，避免重复拼接`);
+
+      recordOperation('route_add', process.argv.join(' '), {
+        method: upperMethod,
+        path: normalizedPath,
+        fullPath,
+        description: options.description,
+      });
     });
 }
 
@@ -131,7 +140,7 @@ function createListCommand(): Command {
       }
 
       const data = filtered.map(route => {
-        const fullPath = (config.baseUrl + route.path).replace(/\/+/g, '/');
+        const fullPath = configManager.getFullPath(route.path);
         return [
           chalk.green(route.method),
           chalk.cyan(route.path),
@@ -187,6 +196,11 @@ function createDeleteCommand(): Command {
 
       await configManager.deleteRoute(upperMethod, path);
       logger.success(`已删除路由: ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
+
+      recordOperation('route_delete', process.argv.join(' '), {
+        method: upperMethod,
+        path,
+      });
     });
 }
 
@@ -206,8 +220,8 @@ function createShowCommand(): Command {
         process.exit(1);
       }
 
+      const fullPath = configManager.getFullPath(route.path);
       const config = configManager.getConfig();
-      const fullPath = (config.baseUrl + route.path).replace(/\/+/g, '/');
       const fullUrl = `http://localhost:${config.port}${fullPath}`;
 
       logger.raw(chalk.cyan(`\n=== ${route.method} ${route.path} ===`));
@@ -354,5 +368,13 @@ function createUseCommand(): Command {
       logger.raw(`  ${chalk.blue('[默认场景]')} 无参数匹配且无当前场景时使用`);
       logger.raw(`  ${chalk.green('[条件匹配]')} 按参数匹配，优先级最高`);
       logger.raw('');
+
+      recordOperation('route_use', process.argv.join(' '), {
+        method: upperMethod,
+        path,
+        caseName,
+        oldActive,
+        alsoDefault: options.alsoDefault,
+      });
     });
 }

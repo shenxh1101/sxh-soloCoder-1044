@@ -2,7 +2,8 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { ConfigManager } from '../utils/config';
 import { logger } from '../utils/logger';
-import { ResponseCase, ParameterCondition } from '../types';
+import { ParameterCondition, ResponseCase, Route } from '../types';
+import { recordOperation } from './session';
 
 export function createCaseCommand(): Command {
   const command = new Command('case');
@@ -102,12 +103,20 @@ function createAddCommand(): Command {
       route.updatedAt = new Date().toISOString();
       await configManager.saveRoute(route);
 
-      const config = configManager.getConfig();
-      const fullPath = (config.baseUrl + path).replace(/\/+/g, '/');
+      const fullPath = configManager.getFullPath(path);
 
       logger.success(`已${existingIndex !== -1 ? '更新' : '添加'}场景: ${chalk.yellow(caseName)}`);
       logger.raw(`  ${chalk.gray('接口:')} ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
       logger.raw(`  ${chalk.gray('完整路径:')} ${chalk.cyan(fullPath)}`);
+
+      recordOperation(existingIndex !== -1 ? 'case_update' : 'case_add', process.argv.join(' '), {
+        method: upperMethod,
+        path,
+        fullPath,
+        caseName,
+        statusCode: newCase.statusCode,
+        conditions: newCase.conditions,
+      });
     });
 }
 
@@ -127,8 +136,7 @@ function createListCommand(): Command {
         process.exit(1);
       }
 
-      const config = configManager.getConfig();
-      const fullPath = (config.baseUrl + route.path).replace(/\/+/g, '/');
+      const fullPath = configManager.getFullPath(route.path);
 
       logger.raw(chalk.cyan(`\n场景列表: ${route.method} ${route.path}`));
       logger.raw(chalk.gray(`完整路径: ${fullPath}`));
@@ -215,6 +223,14 @@ function createDeleteCommand(): Command {
       await configManager.saveRoute(route);
 
       logger.success(`已删除场景: ${chalk.yellow(caseName)}`);
+
+      recordOperation('case_delete', process.argv.join(' '), {
+        method: upperMethod,
+        path,
+        caseName,
+        wasDefault,
+        wasActive,
+      });
     });
 }
 
@@ -348,6 +364,14 @@ function createDefaultCommand(): Command {
       if (options.noActivate) {
         logger.info(`使用 'mock route use ${upperMethod} ${path} ${caseName}' 单独设置当前场景`);
       }
+
+      recordOperation('case_default', process.argv.join(' '), {
+        method: upperMethod,
+        path,
+        caseName,
+        noActivate: options.noActivate,
+        oldActive,
+      });
     });
 }
 

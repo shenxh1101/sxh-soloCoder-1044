@@ -85,7 +85,9 @@ function createExampleCommand(): Command {
       const examples = routes.map(route => {
         const caseName = options.case || route.activeCase || 'default';
         const caseItem = route.cases.find(c => c.name === caseName) || route.cases[0];
-        return generateExample(route, caseItem, options.language, host + config.baseUrl);
+        const basePath = (config.baseUrl + route.path).replace(/\/+/g, '/');
+        const fullUrl = host + basePath;
+        return generateExample(route, caseItem, options.language, fullUrl);
       });
 
       const result = examples.join('\n\n');
@@ -257,8 +259,7 @@ function generateMarkdownDoc(routes: Route[], options: {
   return lines.join('\n');
 }
 
-function generateExample(route: Route, caseItem: ResponseCase, language: string, baseUrl: string): string {
-  const fullUrl = (baseUrl + route.path).replace(/\/+/g, '/');
+function generateExample(route: Route, caseItem: ResponseCase, language: string, fullUrl: string): string {
   const body = typeof caseItem.body === 'string' ? caseItem.body : JSON.stringify(caseItem.body, null, 2);
 
   switch (language.toLowerCase()) {

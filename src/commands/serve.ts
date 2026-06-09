@@ -7,6 +7,7 @@ import { ConfigManager } from '../utils/config';
 import { logger } from '../utils/logger';
 import { Route, ResponseCase, ServeOptions, RecordedRequest } from '../types';
 import { selectResponseCase, SelectCaseResult } from '../utils/condition';
+import { recordRequestToSession } from './session';
 
 interface MockServerOptions extends ServeOptions {
   baseUrl: string;
@@ -290,6 +291,8 @@ export class MockServer {
 
       const summaryPath = path.join(recordDir, 'latest.json');
       await fs.writeJson(summaryPath, this.records.slice(-100), { spaces: 2 });
+
+      await recordRequestToSession(record);
     } catch (error) {
       logger.debug(`保存录制记录失败: ${(error as Error).message}`);
     }
@@ -318,9 +321,8 @@ export class MockServer {
         logger.raw('');
         logger.raw(chalk.cyan('可用接口:'));
         for (const route of this.routes) {
-          const fullPath = (this.options.baseUrl + route.path).replace(/\/+/g, '/');
-          const displayPath = fullPath.startsWith('/') ? fullPath : '/' + fullPath;
-          logger.raw(`  ${this.getMethodColor(route.method)(route.method)} ${chalk.cyan(`http://localhost:${this.options.port}${displayPath}`)}`);
+          const fullPath = this.configManager.getFullPath(route.path);
+          logger.raw(`  ${this.getMethodColor(route.method)(route.method)} ${chalk.cyan(`http://localhost:${this.options.port}${fullPath}`)}`);
         }
         logger.raw('');
         if (this.options.override) {

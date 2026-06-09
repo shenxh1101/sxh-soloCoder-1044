@@ -1,0 +1,78 @@
+{
+  "id": "mq5xfvpazmm62e",
+  "name": "webapp",
+  "startTime": "2026-06-09T00:54:09.982Z",
+  "operations": [
+    {
+      "id": "mq5xg8yeh5klpn",
+      "timestamp": "2026-06-09T00:54:27.158Z",
+      "type": "route_add",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js route add GET /api/test --description 测试路径规范化",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "description": "测试路径规范化"
+      }
+    },
+    {
+      "id": "mq5xlhkhvzwyz8",
+      "timestamp": "2026-06-09T00:58:31.601Z",
+      "type": "case_update",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js case add GET /test high_page --body {page:high,code:0} --query-condition page>5 -f",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "caseName": "high_page",
+        "statusCode": 200,
+        "conditions": {
+          "query": [
+            {
+              "name": "page",
+              "gt": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mq5xlsa4j10k6i",
+      "timestamp": "2026-06-09T00:58:45.484Z",
+      "type": "debug",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js debug GET /test -q page=10",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "query": {
+          "page": 10
+        },
+        "body": {},
+        "headers": {},
+        "selectedCase": "high_page",
+        "selectionReason": "条件匹配成功，使用场景: high_page"
+      }
+    },
+    {
+      "id": "mq5xm0cxwgwba1",
+      "timestamp": "2026-06-09T00:58:55.953Z",
+      "type": "debug",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js debug GET /test -q page=3",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "query": {
+          "page": 3
+        },
+        "body": {},
+        "headers": {},
+        "selectedCase": "default",
+        "selectionReason": "使用当前激活场景: default"
+      }
+    }
+  ],
+  "recordedRequests": [],
+  "active": true
+}

@@ -9,6 +9,8 @@ import { createServeCommand } from './commands/serve';
 import { createExportCommand } from './commands/export';
 import { createDebugCommand } from './commands/debug';
 import { createRecordCommand } from './commands/record';
+import { createSessionCommand } from './commands/session';
+import { createReplayCommand } from './commands/replay';
 
 const pkg = require('../package.json');
 
@@ -27,6 +29,8 @@ program.addCommand(createServeCommand());
 program.addCommand(createExportCommand());
 program.addCommand(createDebugCommand());
 program.addCommand(createRecordCommand());
+program.addCommand(createSessionCommand());
+program.addCommand(createReplayCommand());
 
 program.addHelpText('after', `
 
@@ -44,14 +48,21 @@ ${chalk.cyan('常用命令:')}
   ${chalk.green('mock case default')}          设置默认场景
   ${chalk.green('mock debug')}                 场景调试面板
   ${chalk.green('mock record list')}           查看录制记录
+  ${chalk.green('mock session start')}         启动联调会话
+  ${chalk.green('mock session report')}        生成会话报告
+  ${chalk.green('mock replay all')}            回放所有录制
+  ${chalk.green('mock replay serve')}          启动临时接口
   ${chalk.green('mock export doc')}            导出接口文档
   ${chalk.green('mock export example')}        生成调用示例
 
 ${chalk.cyan('高级用法:')}
-  ${chalk.gray('-')} 支持按 query/body/header 参数匹配不同响应
+  ${chalk.gray('-')} 支持丰富的条件匹配: =, !=, >, >=, <, <=, =~, /pattern/, exists
+  ${chalk.gray('-')} Header 名称大小写不敏感
   ${chalk.gray('-')} 启动服务时可临时覆盖状态码、延迟、响应体
   ${chalk.gray('-')} 支持热重载，修改配置自动生效 (mock serve -w)
   ${chalk.gray('-')} 支持请求录制，一键转成新场景 (mock serve -r)
+  ${chalk.gray('-')} 联调会话记录，导出 Markdown 对齐报告
+  ${chalk.gray('-')} 录制记录回放和临时接口
   ${chalk.gray('-')} 导出 OpenAPI、Postman、Markdown 多种格式
 `);
 
