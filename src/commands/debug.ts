@@ -157,6 +157,14 @@ export function createDebugCommand(): Command {
         headers,
         selectedCase: result.selectedCase.name,
         selectionReason: result.selectionReason,
+        allCaseResults: result.allCaseResults.map((cr: CaseMatchResult) => ({
+          caseName: cr.caseName,
+          matched: cr.matched,
+          overallReason: cr.overallReason,
+          queryCheck: cr.queryCheck ? { passed: cr.queryCheck.passed, details: cr.queryCheck.details } : undefined,
+          bodyCheck: cr.bodyCheck ? { passed: cr.bodyCheck.passed, details: cr.bodyCheck.details } : undefined,
+          headersCheck: cr.headersCheck ? { passed: cr.headersCheck.passed, details: cr.headersCheck.details } : undefined,
+        })),
       });
     });
 

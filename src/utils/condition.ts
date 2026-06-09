@@ -182,8 +182,21 @@ export function checkCaseMatch(
     (caseItem.conditions.headers?.length ?? 0) > 0;
 
   if (!hasAnyCondition) {
-    result.matched = true;
-    result.overallReason = '条件对象为空，匹配任何无参数请求';
+    const hasQuery = req.query && Object.keys(req.query).length > 0;
+    const hasBody = req.body && Object.keys(req.body).length > 0;
+    const hasHeaders = caseItem.conditions.headers && req.headers && Object.keys(req.headers).length > 0;
+    
+    if (!hasQuery && !hasBody && !hasHeaders) {
+      result.matched = true;
+      result.overallReason = '条件对象为空，且请求无 query、无 body，匹配成功';
+    } else {
+      result.matched = false;
+      const reasons: string[] = [];
+      if (hasQuery) reasons.push(`query 不为空`);
+      if (hasBody) reasons.push(`body 不为空`);
+      if (hasHeaders) reasons.push(`headers 不为空`);
+      result.overallReason = `条件对象为空，但请求有参数: ${reasons.join(', ')}，不匹配`;
+    }
     return result;
   }
 

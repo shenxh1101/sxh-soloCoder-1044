@@ -2,7 +2,7 @@ path: /test
 method: GET
 description: 测试路径规范化
 createdAt: '2026-06-09T00:54:27.154Z'
-updatedAt: '2026-06-09T00:58:31.597Z'
+updatedAt: '2026-06-09T01:13:10.272Z'
 cases:
   - name: default
     description: 默认响应
@@ -19,4 +19,13 @@ cases:
       query:
         - name: page
           gt: 5
+  - name: no_params
+    description: 仅匹配无 query、无 body 的请求
+    statusCode: 200
+    delay: 0
+    body: '{status:no_params}'
+    default: false
+    conditions:
+      query: []
+      body: []
 activeCase: default

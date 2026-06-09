@@ -257,6 +257,70 @@ function generateMarkdownReport(session: Session, config: { baseUrl: string; por
       lines.push(`| ${time} | ${type} | \`${op.command}\` | ${details.slice(0, 50)}${details.length > 50 ? '...' : ''} |`);
     }
     lines.push('');
+
+    const debugOps = session.operations.filter(op => op.type === 'debug' && (op.details as any).allCaseResults);
+    if (debugOps.length > 0) {
+      lines.push('## 场景匹配详细分析');
+      lines.push('');
+
+      for (const op of debugOps) {
+        const details = op.details as any;
+        const time = new Date(op.timestamp).toLocaleString();
+
+        lines.push(`### ${details.method} ${details.fullPath}`);
+        lines.push('');
+        lines.push(`> **时间**: ${time}`);
+        if (Object.keys(details.query || {}).length > 0) {
+          lines.push(`> **Query**: \`${JSON.stringify(details.query)}\``);
+        }
+        if (Object.keys(details.body || {}).length > 0) {
+          lines.push(`> **Body**: \`${JSON.stringify(details.body)}\``);
+        }
+        lines.push('');
+        lines.push('| 场景 | 命中 | 原因 | 详细条件 |');
+        lines.push('|------|------|------|----------|');
+
+        for (const cr of details.allCaseResults) {
+          const status = cr.matched ? '✅' : '❌';
+          const caseName = cr.caseName;
+          const reason = cr.overallReason;
+
+          let detailStr = '-';
+          const conditionDetails: string[] = [];
+
+          if (cr.queryCheck && !cr.queryCheck.passed) {
+            for (const d of cr.queryCheck.details) {
+              if (!d.passed) {
+                conditionDetails.push(`query: ${d.condition.name} ${d.reason}`);
+              }
+            }
+          }
+          if (cr.bodyCheck && !cr.bodyCheck.passed) {
+            for (const d of cr.bodyCheck.details) {
+              if (!d.passed) {
+                conditionDetails.push(`body: ${d.condition.name} ${d.reason}`);
+              }
+            }
+          }
+          if (cr.headersCheck && !cr.headersCheck.passed) {
+            for (const d of cr.headersCheck.details) {
+              if (!d.passed) {
+                conditionDetails.push(`headers: ${d.condition.name} ${d.reason}`);
+              }
+            }
+          }
+
+          if (conditionDetails.length > 0) {
+            detailStr = conditionDetails.join('<br>');
+          }
+
+          lines.push(`| ${caseName} | ${status} | ${reason} | ${detailStr} |`);
+        }
+        lines.push('');
+        lines.push(`> **最终命中**: ${details.selectedCase} - ${details.selectionReason}`);
+        lines.push('');
+      }
+    }
   }
 
   if (session.recordedRequests.length > 0) {

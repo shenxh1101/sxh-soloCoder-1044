@@ -109,9 +109,27 @@ function createServeCommand(): Command {
 
       const port = parseInt(options.port, 10);
       const fullPath = record.path;
+      const shortId = record.id.slice(-8);
 
       const server = http.createServer((req, res) => {
         if (req.url === fullPath || req.url?.startsWith(fullPath + '?')) {
+          if (req.method !== record.method) {
+            logger.raw(`[${new Date().toLocaleTimeString()}] ${chalk.red(req.method)} ${chalk.cyan(req.url)} → ${chalk.red('405 Method Not Allowed')} (记录 ${shortId} 仅支持 ${record.method})`);
+            res.writeHead(405, {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Allow': record.method,
+            });
+            res.end(JSON.stringify({
+              error: 'Method Not Allowed',
+              expectedMethod: record.method,
+              actualMethod: req.method,
+              recordId: record.id,
+              shortId,
+            }));
+            return;
+          }
+
           res.writeHead(record.response.statusCode, {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
@@ -122,7 +140,7 @@ function createServeCommand(): Command {
 
           setTimeout(() => {
             res.end(JSON.stringify(record.response.body, null, 2));
-            logger.raw(`[${new Date().toLocaleTimeString()}] ${chalk.green(req.method)} ${chalk.cyan(req.url)} → ${chalk.yellow(record.response.statusCode)}`);
+            logger.raw(`[${new Date().toLocaleTimeString()}] ${chalk.green(req.method)} ${chalk.cyan(req.url)} → ${chalk.yellow(record.response.statusCode)} ${chalk.gray(`(记录 ${shortId})`)}`);
           }, record.response.delay);
         } else if (req.method === 'OPTIONS') {
           res.writeHead(204, {
@@ -133,7 +151,7 @@ function createServeCommand(): Command {
           res.end();
         } else {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Not Found', availablePath: fullPath }));
+          res.end(JSON.stringify({ error: 'Not Found', availablePath: fullPath, availableMethod: record.method }));
         }
       });
 

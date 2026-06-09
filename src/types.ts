@@ -103,7 +103,7 @@ export interface RecordedRequest {
   duration: number;
 }
 
-export type OperationType = 'route_add' | 'route_delete' | 'route_use' | 'case_add' | 'case_delete' | 'case_update' | 'case_default' | 'debug' | 'record_list' | 'record_show' | 'record_to_case' | 'serve_start';
+export type OperationType = 'route_add' | 'route_delete' | 'route_use' | 'case_add' | 'case_delete' | 'case_update' | 'case_default' | 'debug' | 'record_list' | 'record_show' | 'record_export' | 'record_to_case' | 'record_clear' | 'serve_start';
 
 export interface SessionOperation {
   id: string;

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "rec_test_001",
+    "timestamp": "2026-06-09T09:15:00.000Z",
+    "method": "GET",
+    "path": "/test",
+    "fullUrl": "/api/test",
+    "query": {},
+    "body": {},
+    "headers": {},
+    "response": {
+      "statusCode": 200,
+      "delay": 0,
+      "caseName": "default",
+      "selectionReason": "使用默认场景",
+      "headers": {},
+      "body": {"status": "ok"}
+    },
+    "duration": 5
+  },
+  {
+    "id": "rec_test_002",
+    "timestamp": "2026-06-09T09:15:05.000Z",
+    "method": "GET",
+    "path": "/test",
+    "fullUrl": "/api/test?page=1",
+    "query": {"page": 1},
+    "body": {},
+    "headers": {},
+    "response": {
+      "statusCode": 200,
+      "delay": 0,
+      "caseName": "default",
+      "selectionReason": "使用当前激活场景",
+      "headers": {},
+      "body": {"page": 1, "data": []}
+    },
+    "duration": 8
+  }
+]

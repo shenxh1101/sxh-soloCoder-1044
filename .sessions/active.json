@@ -71,6 +71,166 @@
         "selectedCase": "default",
         "selectionReason": "使用当前激活场景: default"
       }
+    },
+    {
+      "id": "mq5y4bk4559m0a",
+      "timestamp": "2026-06-09T01:13:10.276Z",
+      "type": "case_add",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js case add GET /test no_params --body {status:no_params} -f",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "caseName": "no_params",
+        "statusCode": 200
+      }
+    },
+    {
+      "id": "mq5y4x8duu1dml",
+      "timestamp": "2026-06-09T01:13:38.365Z",
+      "type": "debug",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js debug GET /test",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "query": {},
+        "body": {},
+        "headers": {},
+        "selectedCase": "no_params",
+        "selectionReason": "条件匹配成功，使用场景: no_params",
+        "allCaseResults": [
+          {
+            "caseName": "default",
+            "matched": false,
+            "overallReason": "无匹配条件，跳过条件匹配"
+          },
+          {
+            "caseName": "high_page",
+            "matched": false,
+            "overallReason": "条件不匹配: query",
+            "queryCheck": {
+              "passed": false,
+              "details": [
+                {
+                  "type": "query",
+                  "condition": {
+                    "name": "page",
+                    "gt": 5
+                  },
+                  "passed": false,
+                  "reason": "参数不存在"
+                }
+              ]
+            },
+            "bodyCheck": {
+              "passed": true,
+              "details": []
+            },
+            "headersCheck": {
+              "passed": true,
+              "details": []
+            }
+          },
+          {
+            "caseName": "no_params",
+            "matched": true,
+            "overallReason": "条件对象为空，且请求无 query、无 body，匹配成功"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mq5y5591negubj",
+      "timestamp": "2026-06-09T01:13:48.757Z",
+      "type": "debug",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js debug GET /test -q page=1",
+      "details": {
+        "method": "GET",
+        "path": "/test",
+        "fullPath": "/api/test",
+        "query": {
+          "page": 1
+        },
+        "body": {},
+        "headers": {},
+        "selectedCase": "default",
+        "selectionReason": "使用当前激活场景: default",
+        "allCaseResults": [
+          {
+            "caseName": "default",
+            "matched": false,
+            "overallReason": "无匹配条件，跳过条件匹配"
+          },
+          {
+            "caseName": "high_page",
+            "matched": false,
+            "overallReason": "条件不匹配: query",
+            "queryCheck": {
+              "passed": false,
+              "details": [
+                {
+                  "type": "query",
+                  "condition": {
+                    "name": "page",
+                    "gt": 5
+                  },
+                  "actualValue": 1,
+                  "passed": false,
+                  "reason": "值不大于: 1 <= 5"
+                }
+              ]
+            },
+            "bodyCheck": {
+              "passed": true,
+              "details": []
+            },
+            "headersCheck": {
+              "passed": true,
+              "details": []
+            }
+          },
+          {
+            "caseName": "no_params",
+            "matched": false,
+            "overallReason": "条件对象为空，但请求有参数: query 不为空，不匹配"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mq5y65t05yfsk9",
+      "timestamp": "2026-06-09T01:14:36.132Z",
+      "type": "record_list",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js record list",
+      "details": {
+        "count": 2,
+        "total": 2
+      }
+    },
+    {
+      "id": "mq5y6euv563zzn",
+      "timestamp": "2026-06-09T01:14:47.863Z",
+      "type": "record_show",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js record show rec_test_001",
+      "details": {
+        "recordId": "rec_test_001",
+        "method": "GET",
+        "path": "/test",
+        "statusCode": 200,
+        "caseName": "default"
+      }
+    },
+    {
+      "id": "mq5y6rwlkd94wt",
+      "timestamp": "2026-06-09T01:15:04.773Z",
+      "type": "record_export",
+      "command": "C:\\Program Files\\nodejs\\node.exe D:\\code\\TraeProjects\\1044\\dist\\index.js record export -f markdown -o test_records.md",
+      "details": {
+        "count": 2,
+        "format": "markdown",
+        "output": "D:\\code\\TraeProjects\\1044\\test_records.md"
+      }
     }
   ],
   "recordedRequests": [],

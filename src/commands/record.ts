@@ -108,6 +108,14 @@ function createListCommand(): Command {
 
       const displayRecords = records.slice(-limit).reverse();
 
+      recordOperation('record_list', process.argv.join(' '), {
+        count: displayRecords.length,
+        total: records.length,
+        method: options.method,
+        path: options.path,
+        date: options.date,
+      });
+
       logger.raw('');
       logger.raw(chalk.cyan(`📋 录制记录 (${displayRecords.length}/${records.length} 条):`));
       logger.raw('');
@@ -149,6 +157,14 @@ function createShowCommand(): Command {
         logger.error(`找不到录制记录: ${id}`);
         process.exit(1);
       }
+
+      recordOperation('record_show', process.argv.join(' '), {
+        recordId: id,
+        method: record.method,
+        path: record.path,
+        statusCode: record.response.statusCode,
+        caseName: record.response.caseName,
+      });
 
       logger.raw('');
       logger.raw(chalk.cyan('='.repeat(80)));
@@ -226,6 +242,13 @@ function createExportCommand(): Command {
       const outputPath = path.resolve(options.output);
       await fs.writeFile(outputPath, content);
       logger.success(`已导出 ${records.length} 条录制记录到: ${chalk.cyan(outputPath)}`);
+
+      recordOperation('record_export', process.argv.join(' '), {
+        count: records.length,
+        format: options.format,
+        output: outputPath,
+        date: options.date,
+      });
     });
 }
 
@@ -364,12 +387,22 @@ function createClearCommand(): Command {
         if (await fs.pathExists(filePath)) {
           await fs.remove(filePath);
           logger.success(`已清除 ${options.date} 的录制记录`);
+          recordOperation('record_clear', process.argv.join(' '), {
+            date: options.date,
+            count: 'all',
+          });
         } else {
           logger.info(`没有 ${options.date} 的录制记录`);
         }
       } else {
+        const recordFiles = await fs.readdir(recordDir);
+        const count = recordFiles.filter(f => f.endsWith('.json')).length;
         await fs.emptyDir(recordDir);
         logger.success('已清除所有录制记录');
+        recordOperation('record_clear', process.argv.join(' '), {
+          date: 'all',
+          count,
+        });
       }
     });
 }
