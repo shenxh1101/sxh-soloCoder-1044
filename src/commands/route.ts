@@ -45,9 +45,18 @@ function createAddCommand(): Command {
         process.exit(1);
       }
 
-      const exists = await configManager.routeExists(upperMethod, path);
+      const config = configManager.getConfig();
+      const baseUrl = config.baseUrl;
+      const normalizedPath = configManager.normalizePath(path);
+
+      if (path !== normalizedPath) {
+        logger.warning(`路径已自动规范化: ${chalk.yellow(path)} → ${chalk.green(normalizedPath)}`);
+        logger.info(`路径相对于 baseUrl (${baseUrl})，无需包含 baseUrl 前缀`);
+      }
+
+      const exists = await configManager.routeExists(upperMethod, normalizedPath);
       if (exists && !options.force) {
-        logger.error(`路由已存在: ${upperMethod} ${path}`);
+        logger.error(`路由已存在: ${upperMethod} ${normalizedPath}`);
         logger.info('使用 -f 或 --force 选项覆盖');
         process.exit(1);
       }
@@ -63,7 +72,7 @@ function createAddCommand(): Command {
 
       const now = new Date().toISOString();
       const route: Route = {
-        path,
+        path: normalizedPath,
         method: upperMethod,
         description: options.description,
         tags: options.tags ? options.tags.split(',').map((t: string) => t.trim()) : undefined,
@@ -84,13 +93,14 @@ function createAddCommand(): Command {
 
       await configManager.saveRoute(route);
 
-      const config = configManager.getConfig();
-      const fullPath = (config.baseUrl + path).replace(/\/+/g, '/');
+      const fullPath = configManager.getFullPath(normalizedPath);
       const fullUrl = `http://localhost:${config.port}${fullPath}`;
 
-      logger.success(`已添加路由: ${chalk.green(upperMethod)} ${chalk.cyan(path)}`);
+      logger.success(`已添加路由: ${chalk.green(upperMethod)} ${chalk.cyan(normalizedPath)}`);
       logger.raw(`  ${chalk.gray('完整路径:')} ${chalk.cyan(fullPath)}`);
       logger.raw(`  ${chalk.gray('访问地址:')} ${chalk.cyan(fullUrl)}`);
+      logger.raw(`  ${chalk.gray('Base URL:')} ${baseUrl}`);
+      logger.raw(`  ${chalk.gray('说明:')} 路由路径已自动去除 baseUrl 前缀，避免重复拼接`);
     });
 }
 

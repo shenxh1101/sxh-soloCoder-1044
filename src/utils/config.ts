@@ -72,12 +72,14 @@ export class ConfigManager {
   async saveRoute(route: Route): Promise<void> {
     const routesDir = this.getRoutesDir();
     await fs.mkdirp(routesDir);
+    route.path = this.normalizePath(route.path);
     const filePath = this.getRouteFilePath(route.method, route.path);
     await fs.writeFile(filePath, yaml.dump(route, { indent: 2 }));
   }
 
   async loadRoute(method: string, routePath: string): Promise<Route | null> {
-    const filePath = this.getRouteFilePath(method, routePath);
+    const normalizedPath = this.normalizePath(routePath);
+    const filePath = this.getRouteFilePath(method, normalizedPath);
     if (!(await fs.pathExists(filePath))) {
       return null;
     }
@@ -110,7 +112,8 @@ export class ConfigManager {
   }
 
   async deleteRoute(method: string, routePath: string): Promise<boolean> {
-    const filePath = this.getRouteFilePath(method, routePath);
+    const normalizedPath = this.normalizePath(routePath);
+    const filePath = this.getRouteFilePath(method, normalizedPath);
     if (await fs.pathExists(filePath)) {
       await fs.remove(filePath);
       return true;
@@ -119,7 +122,8 @@ export class ConfigManager {
   }
 
   async routeExists(method: string, routePath: string): Promise<boolean> {
-    const filePath = this.getRouteFilePath(method, routePath);
+    const normalizedPath = this.normalizePath(routePath);
+    const filePath = this.getRouteFilePath(method, normalizedPath);
     return fs.pathExists(filePath);
   }
 
@@ -177,7 +181,8 @@ export class ConfigManager {
   }
 
   private getRouteFilePath(method: string, routePath: string): string {
-    const safePath = routePath.replace(/\//g, '_').replace(/[:*?]/g, '');
+    const normalizedPath = this.normalizePath(routePath);
+    const safePath = normalizedPath.replace(/\//g, '_').replace(/[:*?]/g, '');
     const fileName = `${method.toLowerCase()}${safePath}.yaml`;
     return path.join(this.getRoutesDir(), fileName);
   }
@@ -191,5 +196,33 @@ export class ConfigManager {
   getConfig(): ProjectConfig {
     this.ensureConfigLoaded();
     return this.config!;
+  }
+
+  normalizePath(routePath: string): string {
+    this.ensureConfigLoaded();
+    const baseUrl = this.config!.baseUrl;
+    let normalized = routePath;
+
+    if (!normalized.startsWith('/')) {
+      normalized = '/' + normalized;
+    }
+
+    if (baseUrl && baseUrl !== '/') {
+      const prefix = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+      if (normalized.startsWith(prefix)) {
+        normalized = '/' + normalized.slice(prefix.length);
+      } else if (normalized === baseUrl) {
+        normalized = '/';
+      }
+    }
+
+    return normalized.replace(/\/+/g, '/');
+  }
+
+  getFullPath(routePath: string): string {
+    this.ensureConfigLoaded();
+    const baseUrl = this.config!.baseUrl;
+    const normalized = this.normalizePath(routePath);
+    return (baseUrl + normalized).replace(/\/+/g, '/');
   }
 }

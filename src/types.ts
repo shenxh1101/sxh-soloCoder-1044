@@ -6,7 +6,14 @@ export interface ParameterCondition {
   contains?: string;
   matches?: string;
   exists?: boolean;
+  gt?: number;
+  gte?: number;
+  lt?: number;
+  lte?: number;
+  not?: string | number | boolean;
 }
+
+export type ConditionOperator = 'value' | 'contains' | 'matches' | 'exists' | 'gt' | 'gte' | 'lt' | 'lte' | 'not';
 
 export interface ResponseCase {
   name: string;

@@ -11,9 +11,121 @@ export interface ConditionCheckResult {
   }[];
 }
 
+function normalizeHeaders(headers: Record<string, any>): Record<string, any> {
+  const normalized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    normalized[key.toLowerCase()] = value;
+  }
+  return normalized;
+}
+
+function getParamValue(params: Record<string, any>, name: string, type: 'query' | 'body' | 'headers'): any {
+  if (type === 'headers') {
+    const normalized = normalizeHeaders(params);
+    return normalized[name.toLowerCase()];
+  }
+  return params[name];
+}
+
+function parseNumber(value: any): number | null {
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+}
+
+function checkSingleCondition(
+  actualValue: any,
+  condition: ParameterCondition,
+  type: 'query' | 'body' | 'headers'
+): { passed: boolean; reason: string } {
+  if (condition.exists !== undefined) {
+    const exists = actualValue !== undefined;
+    const passed = condition.exists ? exists : !exists;
+    const reason = condition.exists
+      ? (passed ? `参数存在` : `参数不存在`)
+      : (passed ? `参数不存在` : `参数存在`);
+    return { passed, reason };
+  }
+
+  if (actualValue === undefined) {
+    return { passed: false, reason: '参数不存在' };
+  }
+
+  if (condition.value !== undefined) {
+    const actualStr = String(actualValue);
+    const expectedStr = String(condition.value);
+    const passed = actualStr === expectedStr;
+    return {
+      passed,
+      reason: passed ? `值匹配: ${actualValue} === ${condition.value}` : `值不匹配: ${actualValue} !== ${condition.value}`
+    };
+  }
+
+  if (condition.not !== undefined) {
+    const actualStr = String(actualValue);
+    const expectedStr = String(condition.not);
+    const passed = actualStr !== expectedStr;
+    return {
+      passed,
+      reason: passed ? `值不匹配: ${actualValue} !== ${condition.not}` : `值匹配（不期望）: ${actualValue} === ${condition.not}`
+    };
+  }
+
+  if (condition.contains !== undefined) {
+    const actualStr = String(actualValue);
+    const passed = actualStr.includes(condition.contains);
+    return {
+      passed,
+      reason: passed ? `包含子串: ${actualValue} 包含 '${condition.contains}'` : `不包含子串: ${actualValue} 不包含 '${condition.contains}'`
+    };
+  }
+
+  if (condition.matches !== undefined) {
+    try {
+      const regex = new RegExp(condition.matches);
+      const passed = regex.test(String(actualValue));
+      return {
+        passed,
+        reason: passed ? `正则匹配: ${actualValue} 匹配 /${condition.matches}/` : `正则不匹配: ${actualValue} 不匹配 /${condition.matches}/`
+      };
+    } catch {
+      return { passed: false, reason: `正则表达式无效: /${condition.matches}/` };
+    }
+  }
+
+  if (condition.gt !== undefined || condition.gte !== undefined || condition.lt !== undefined || condition.lte !== undefined) {
+    const numValue = parseNumber(actualValue);
+    if (numValue === null) {
+      return { passed: false, reason: `值不是数字: ${actualValue}` };
+    }
+
+    if (condition.gt !== undefined && !(numValue > condition.gt)) {
+      return { passed: false, reason: `值不大于: ${numValue} <= ${condition.gt}` };
+    }
+    if (condition.gte !== undefined && !(numValue >= condition.gte)) {
+      return { passed: false, reason: `值不大于等于: ${numValue} < ${condition.gte}` };
+    }
+    if (condition.lt !== undefined && !(numValue < condition.lt)) {
+      return { passed: false, reason: `值不小于: ${numValue} >= ${condition.lt}` };
+    }
+    if (condition.lte !== undefined && !(numValue <= condition.lte)) {
+      return { passed: false, reason: `值不小于等于: ${numValue} > ${condition.lte}` };
+    }
+
+    const parts: string[] = [];
+    if (condition.gt !== undefined) parts.push(`> ${condition.gt}`);
+    if (condition.gte !== undefined) parts.push(`>= ${condition.gte}`);
+    if (condition.lt !== undefined) parts.push(`< ${condition.lt}`);
+    if (condition.lte !== undefined) parts.push(`<= ${condition.lte}`);
+    return { passed: true, reason: `比较匹配: ${numValue} ${parts.join(', ')}` };
+  }
+
+  return { passed: true, reason: '仅检查存在性，参数已存在' };
+}
+
 export function checkParamConditions(
   params: Record<string, any>,
-  conditions?: ParameterCondition[]
+  conditions: ParameterCondition[] | undefined,
+  type: 'query' | 'body' | 'headers'
 ): ConditionCheckResult {
   const details: ConditionCheckResult['details'] = [];
 
@@ -22,49 +134,13 @@ export function checkParamConditions(
   }
 
   const allPassed = conditions.every(condition => {
-    const value = params[condition.name];
-    let passed = false;
-    let reason = '';
-
-    if (condition.exists !== undefined) {
-      const exists = value !== undefined;
-      passed = condition.exists ? exists : !exists;
-      reason = condition.exists
-        ? (passed ? `参数存在` : `参数不存在`)
-        : (passed ? `参数不存在` : `参数存在`);
-    } else if (value === undefined) {
-      passed = false;
-      reason = `参数不存在`;
-    } else if (condition.value !== undefined) {
-      passed = String(value) === String(condition.value);
-      reason = passed
-        ? `值匹配: ${value} === ${condition.value}`
-        : `值不匹配: ${value} !== ${condition.value}`;
-    } else if (condition.contains !== undefined) {
-      passed = String(value).includes(condition.contains);
-      reason = passed
-        ? `包含子串: ${value} 包含 '${condition.contains}'`
-        : `不包含子串: ${value} 不包含 '${condition.contains}'`;
-    } else if (condition.matches !== undefined) {
-      try {
-        const regex = new RegExp(condition.matches);
-        passed = regex.test(String(value));
-        reason = passed
-          ? `正则匹配: ${value} 匹配 /${condition.matches}/`
-          : `正则不匹配: ${value} 不匹配 /${condition.matches}/`;
-      } catch {
-        passed = false;
-        reason = `正则表达式无效: /${condition.matches}/`;
-      }
-    } else {
-      passed = true;
-      reason = `仅检查存在性，参数已存在`;
-    }
+    const actualValue = getParamValue(params, condition.name, type);
+    const { passed, reason } = checkSingleCondition(actualValue, condition, type);
 
     details.push({
-      type: 'query',
+      type,
       condition,
-      actualValue: value,
+      actualValue,
       passed,
       reason,
     });
@@ -100,16 +176,24 @@ export function checkCaseMatch(
     return result;
   }
 
-  const queryCheck = checkParamConditions(req.query || {}, caseItem.conditions.query);
-  queryCheck.details.forEach(d => d.type = 'query');
+  const hasAnyCondition = 
+    (caseItem.conditions.query?.length ?? 0) > 0 || 
+    (caseItem.conditions.body?.length ?? 0) > 0 || 
+    (caseItem.conditions.headers?.length ?? 0) > 0;
+
+  if (!hasAnyCondition) {
+    result.matched = true;
+    result.overallReason = '条件对象为空，匹配任何无参数请求';
+    return result;
+  }
+
+  const queryCheck = checkParamConditions(req.query || {}, caseItem.conditions.query, 'query');
   result.queryCheck = queryCheck;
 
-  const bodyCheck = checkParamConditions(req.body || {}, caseItem.conditions.body);
-  bodyCheck.details.forEach(d => d.type = 'body');
+  const bodyCheck = checkParamConditions(req.body || {}, caseItem.conditions.body, 'body');
   result.bodyCheck = bodyCheck;
 
-  const headersCheck = checkParamConditions(req.headers || {}, caseItem.conditions.headers);
-  headersCheck.details.forEach(d => d.type = 'headers');
+  const headersCheck = checkParamConditions(req.headers || {}, caseItem.conditions.headers, 'headers');
   result.headersCheck = headersCheck;
 
   result.matched = queryCheck.passed && bodyCheck.passed && headersCheck.passed;

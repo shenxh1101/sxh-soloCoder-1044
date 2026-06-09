@@ -28,9 +28,9 @@ function createAddCommand(): Command {
     .option('--delay <ms>', '响应延迟（毫秒）', '0')
     .option('--header <header>', '响应头，可多次指定', (v, p) => [...p, v], [] as string[])
     .option('--default', '设为默认场景', false)
-    .option('--query-condition <condition>', 'query 参数条件: name=value', (v, p) => [...p, v], [] as string[])
-    .option('--body-condition <condition>', 'body 参数条件: name=value', (v, p) => [...p, v], [] as string[])
-    .option('--header-condition <condition>', 'header 条件: name=value', (v, p) => [...p, v], [] as string[])
+    .option('--query-condition <condition>', 'query 参数条件，支持: name=value, name>value, name>=value, name<value, name<=value, name!=value, name=~value, name=/pattern/, name?, name!?', (v, p) => [...p, v], [] as string[])
+    .option('--body-condition <condition>', 'body 参数条件，格式同上', (v, p) => [...p, v], [] as string[])
+    .option('--header-condition <condition>', 'header 条件，格式同上（大小写不敏感）', (v, p) => [...p, v], [] as string[])
     .option('-f, --force', '覆盖已存在的场景', false)
     .action(async (method: string, path: string, caseName: string, options) => {
       const configManager = new ConfigManager();
@@ -372,25 +372,61 @@ function parseConditions(options: any): ResponseCase['conditions'] | undefined {
 }
 
 function parseCondition(condition: string): ParameterCondition {
-  const [name, value] = condition.split('=');
-  const result: ParameterCondition = { name: name.trim() };
+  const trimmed = condition.trim();
 
-  if (value !== undefined) {
-    const trimmedValue = value.trim();
-    if (trimmedValue.startsWith('/') && trimmedValue.endsWith('/')) {
-      result.matches = trimmedValue.slice(1, -1);
-    } else if (trimmedValue.includes('*')) {
-      result.contains = trimmedValue.replace(/\*/g, '');
-    } else if (!isNaN(Number(trimmedValue))) {
-      result.value = Number(trimmedValue);
-    } else if (trimmedValue === 'true') {
-      result.value = true;
-    } else if (trimmedValue === 'false') {
-      result.value = false;
-    } else {
-      result.value = trimmedValue;
-    }
+  const existsMatch = trimmed.match(/^([a-zA-Z0-9_.-]+)(\!\?|\?)$/);
+  if (existsMatch) {
+    return {
+      name: existsMatch[1],
+      exists: existsMatch[2] === '?'
+    };
   }
 
-  return result;
+  const operatorMatch = trimmed.match(/^([a-zA-Z0-9_.-]+)(>=|<=|!=|=~|>|<|=)(.*)$/);
+  if (operatorMatch) {
+    const [, name, operator, rawValue] = operatorMatch;
+    const value = rawValue.trim();
+    const result: ParameterCondition = { name };
+
+    const parseValue = (v: string): string | number | boolean => {
+      if (v === 'true') return true;
+      if (v === 'false') return false;
+      if (!isNaN(Number(v)) && v !== '') return Number(v);
+      return v;
+    };
+
+    switch (operator) {
+      case '=':
+        if (value.startsWith('/') && value.endsWith('/')) {
+          result.matches = value.slice(1, -1);
+        } else if (value.includes('*')) {
+          result.contains = value.replace(/\*/g, '');
+        } else {
+          result.value = parseValue(value);
+        }
+        break;
+      case '!=':
+        result.not = parseValue(value);
+        break;
+      case '=~':
+        result.contains = value;
+        break;
+      case '>':
+        result.gt = Number(value);
+        break;
+      case '>=':
+        result.gte = Number(value);
+        break;
+      case '<':
+        result.lt = Number(value);
+        break;
+      case '<=':
+        result.lte = Number(value);
+        break;
+    }
+
+    return result;
+  }
+
+  return { name: trimmed, exists: true };
 }
